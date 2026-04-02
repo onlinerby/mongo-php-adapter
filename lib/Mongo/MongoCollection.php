@@ -494,12 +494,12 @@ class MongoCollection
      *
      * @link http://www.php.net/manual/ru/mongocollection.findandmodify.php
      * @param array $query The query criteria to search for.
-     * @param array $update The update criteria.
-     * @param array $fields Optionally only return these fields.
+     * @param array|null $update The update criteria.
+     * @param array|null $fields Optionally only return these fields.
      * @param array $options An array of options to apply, such as remove the match document from the DB and return it.
      * @return array Returns the original document, or the modified document when new is set.
      */
-    public function findAndModify(array $query, array $update = null, array $fields = null, array $options = [])
+    public function findAndModify(array $query, ?array $update = null, ?array $fields = null, array $options = [])
     {
         $query = TypeConverter::fromLegacy($query);
         try {
