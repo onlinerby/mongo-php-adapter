@@ -32,13 +32,13 @@ class MongoClient
     use Helper\WriteConcern;
 
     const VERSION = '1.6.12';
-    const DEFAULT_HOST = "localhost" ;
-    const DEFAULT_PORT = 27017 ;
-    const RP_PRIMARY = "primary" ;
-    const RP_PRIMARY_PREFERRED = "primaryPreferred" ;
-    const RP_SECONDARY = "secondary" ;
-    const RP_SECONDARY_PREFERRED = "secondaryPreferred" ;
-    const RP_NEAREST = "nearest" ;
+    const DEFAULT_HOST = "localhost";
+    const DEFAULT_PORT = 27017;
+    const RP_PRIMARY = "primary";
+    const RP_PRIMARY_PREFERRED = "primaryPreferred";
+    const RP_SECONDARY = "secondary";
+    const RP_SECONDARY_PREFERRED = "secondaryPreferred";
+    const RP_NEAREST = "nearest";
 
     /**
      * @var bool
@@ -93,10 +93,10 @@ class MongoClient
         $this->applyConnectionOptions($server, $options);
 
         $this->server = $server;
-        if (false === strpos($this->server, 'mongodb://')) {
-            $this->server = 'mongodb://'.$this->server;
+        if (false === strpos($this->server, '://')) {
+            $this->server = 'mongodb://' . $this->server;
         }
-        $this->client = new Client($this->server, $options, $driverOptions);
+        $this->client = new Client($this->server, $options, $driverOptions + ['driver' => ['name' => 'mongo-php-adapter']]);
         $info = $this->client->__debugInfo();
         $this->manager = $info['manager'];
 
@@ -222,7 +222,7 @@ class MongoClient
             $results[$key] = [
                 'host' => $server->getHost(),
                 'port' => $server->getPort(),
-                'health' => (int) $info['ok'],
+                'health' => 1,
                 'state' => $state,
                 'ping' => $server->getLatency(),
                 'lastPing' => null,
@@ -352,7 +352,7 @@ class MongoClient
     /**
      * @return array
      */
-    function __sleep()
+    public function __sleep()
     {
         return [
             'connected', 'status', 'server', 'persistent'
@@ -365,7 +365,12 @@ class MongoClient
      */
     private function extractUrlOptions($server)
     {
-        $queryOptions = explode('&', parse_url($server, PHP_URL_QUERY));
+        $queryOptions = parse_url($server, PHP_URL_QUERY);
+        if (!$queryOptions) {
+            return [];
+        }
+
+        $queryOptions = explode('&', $queryOptions);
 
         $options = [];
         foreach ($queryOptions as $option) {
@@ -376,6 +381,8 @@ class MongoClient
             $keyValue = explode('=', $option);
             if ($keyValue[0] === 'readPreferenceTags') {
                 $options[$keyValue[0]][] = $this->getReadPreferenceTags($keyValue[1]);
+            } elseif (ctype_digit($keyValue[1])) {
+                $options[$keyValue[0]] = (int) $keyValue[1];
             } else {
                 $options[$keyValue[0]] = $keyValue[1];
             }

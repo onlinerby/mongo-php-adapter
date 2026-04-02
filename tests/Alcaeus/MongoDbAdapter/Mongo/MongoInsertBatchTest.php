@@ -9,7 +9,7 @@ class MongoInsertBatchTest extends TestCase
     public function testSerialize()
     {
         $batch = new \MongoInsertBatch($this->getCollection());
-        $this->assertInternalType('string', serialize($batch));
+        $this->assertIsString(serialize($batch));
     }
 
     public function testInsertBatch()
@@ -30,8 +30,28 @@ class MongoInsertBatchTest extends TestCase
         $this->assertSame(2, $newCollection->count());
         $record = $newCollection->findOne();
         $this->assertNotNull($record);
-        $this->assertObjectHasAttribute('foo', $record);
-        $this->assertAttributeSame('bar', 'foo', $record);
+        $this->assertSame('bar', $record->foo);
+    }
+
+    public function testInsertBatchWithoutAck()
+    {
+        $batch = new \MongoInsertBatch($this->getCollection());
+
+        $this->assertTrue($batch->add(['foo' => 'bar']));
+        $this->assertTrue($batch->add(['bar' => 'foo']));
+
+        $expected = [
+            'nInserted' => 0,
+            'ok' => true,
+        ];
+
+        $this->assertSame($expected, $batch->execute(['w' => 0]));
+
+        $newCollection = $this->getCheckDatabase()->selectCollection('test');
+        $this->assertSame(2, $newCollection->count());
+        $record = $newCollection->findOne();
+        $this->assertNotNull($record);
+        $this->assertSame('bar', $record->foo);
     }
 
     public function testInsertBatchError()
@@ -60,7 +80,7 @@ class MongoInsertBatchTest extends TestCase
         } catch (\MongoWriteConcernException $e) {
             $this->assertSame('Failed write', $e->getMessage());
             $this->assertSame(911, $e->getCode());
-            $this->assertArraySubset($expected, $e->getDocument());
+            $this->assertMatches($expected, $e->getDocument());
         }
     }
 }
