@@ -20,7 +20,6 @@ class MongoIdTest extends TestCase
         $this->assertSame($stringId, $id->{'$id'});
 
         $serialized = serialize($id);
-        $this->assertSame(sprintf('C:7:"MongoId":24:{%s}', $stringId), $serialized);
 
         $unserialized = unserialize($serialized);
         $this->assertInstanceOf('MongoId', $unserialized);
@@ -39,6 +38,14 @@ class MongoIdTest extends TestCase
         $this->assertSame(9127278, $id->getInc());
         $this->assertSame(1411399176, $id->getTimestamp());
         $this->assertSame(34335, $id->getPID());
+    }
+
+    public function testUnserializeLegacyFormat()
+    {
+        $original = '54203e08d51d4a1f868b456e';
+        $serialized = sprintf('C:7:"MongoId":24:{%s}', $original);
+
+        $this->assertSame($original, (string) unserialize($serialized));
     }
 
     public function testCreateWithInvalidStringThrowsMongoException()
